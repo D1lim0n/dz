@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#161c29">
+<title>ДЗ — домашка под контролем</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📘</text></svg>">
+<style>
+/* --- Переменные и база --- */
+:root { --bg: #eef2f9; --panel: #ffffff; --ink: #182031; --muted: #7b8698; --line: #e3e9f3; --accent: #3f6df6; --accent-dark: #2f57d6; --accent-soft: #eaf0ff; --green-soft: #e8f9ee; --danger: #dc2626; --radius: 9px; --shadow: 0 8px 24px rgba(20, 32, 60, .07); }
+*,
+*::before,
+*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html,
+body { height: 100%; }
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--ink); background: radial-gradient(1100px 520px at 85% -10%, #e2eaff 0%, rgba(226, 234, 255, 0) 60%), var(--bg); overflow: hidden; }
+button,
+input { font: inherit; color: inherit; }
+button { background: none; border: none; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #cbd5e6; border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #b3c0d6; }
+::-webkit-scrollbar-track { background: transparent; }
+/* --- Каркас --- */
+.app { display: flex; height: 100vh; }
+/* ---------- Боковое меню ---------- */
+.sidebar { width: 200px; flex: 0 0 200px; display: flex; flex-direction: column; gap: 20px; padding: 18px 12px; background: #fbfcff; border-right: 1px solid var(--line); }
+.brand { display: block; padding: 0; text-align: center; }
+.brand-text b { display: block; font-size: 14px; font-weight: 700; color: var(--ink); }
+.brand-text small { display: block; font-size: 11px; color: var(--muted); }
+.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav-label { padding: 0 0 6px; font-size: 10px; font-weight: 700; letter-spacing: .9px; text-transform: uppercase; text-align: center; color: #9aa5b7; }
+.nav-btn { position: relative; display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; font-size: 13.5px; font-weight: 600; color: #5a6579; text-align: left; transition: background .15s, color .15s; }
+.nav-btn:hover { background: #f1f4fa; color: var(--ink); }
+.nav-btn.active { color: var(--accent-dark); background: var(--accent-soft); }
+.nav-btn.active::before { content: ""; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+.nav-icon { width: 18px; height: 18px; display: grid; place-items: center; flex: none; }
+.nav-icon svg { width: 18px; height: 18px; display: block; }
+.sidebar-footer { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--line); }
+.diary-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; text-align: left; transition: border-color .15s, background .15s; }
+.diary-btn:hover { border-color: #c7d6fb; background: #f7faff; }
+.diary-btn .diary-icon { width: 18px; height: 18px; display: grid; place-items: center; color: var(--accent); flex: none; }
+.diary-btn .diary-icon svg { width: 17px; height: 17px; }
+.diary-btn b { display: block; font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.diary-btn small { display: block; font-size: 11px; color: var(--muted); }
+/* ---------- Контент ---------- */
+.content { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.screen { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 10px; padding: 12px 20px 14px; width: 100%; max-width: 1560px; margin: 0 auto; overflow: hidden; }
+.screen.active { display: flex; }
+/* ---------- Шапка экрана ---------- */
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.topbar-head { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.topbar h1 { font-size: 20px; font-weight: 700; letter-spacing: .2px; white-space: nowrap; }
+.date-label { font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 11.5px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; }
+.chip b { font-size: 13px; color: var(--ink); }
+.search { display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; transition: border-color .16s, box-shadow .16s; }
+.search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(63, 109, 246, .13); }
+.search span { font-size: 13px; opacity: .6; }
+.search input { width: 150px; border: none; outline: none; background: none; font-size: 12.5px; }
+.ghost-btn { width: 30px; height: 30px; display: grid; place-items: center; font-size: 15px; color: #7a8698; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; transition: .16s; }
+.ghost-btn:hover { color: var(--danger); background: #fef2f2; border-color: #fecaca; }
+.back-btn { width: 34px; height: 34px; display: grid; place-items: center; font-size: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; flex: none; transition: .16s; }
+.back-btn:hover { color: var(--accent); border-color: #c7d6fb; background: var(--accent-soft); }
+#screen-day .topbar { justify-content: flex-start; }
+/* --- Список предметов --- */
+.list { flex: 1; min-height: 0; display: flex; flex-direction: column; background: var(--panel); border: 1px solid #e9edf5; border-radius: var(--radius); box-shadow: var(--shadow); overflow: auto; }
+.row { display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid #f0f3f8; transition: background .15s; }
+.list--main .row { flex: 1 1 0; min-height: 34px; }
+.list--day .row { flex: none; min-height: 48px; }
+.row:last-child { border-bottom: none; }
+.row:hover { background: #fbfcff; }
+/* тетрадка */
+.nb { position: relative; display: flex; align-items: center; justify-content: center; width: 32px; height: 34px; min-width: 32px; border: 2px solid #fff; border-radius: 4px; box-shadow: 0 2px 6px rgba(20, 30, 50, .28); flex: none; }
+.nb .ss { display: grid; place-items: center; width: 100%; height: 100%; font-size: 15px; line-height: 1; }
+.nb .ss svg { display: block; width: 74%; height: auto; border-radius: 1.5px; }
+.nb .bb { position: absolute; right: 2px; bottom: 1px; font-size: 9px; font-weight: 800; line-height: 1; }
+.nb-lg { width: 30px; height: 33px; min-width: 30px; }
+.nb-lg .ss { font-size: 14px; }
+.nb-lg .bb { font-size: 8px; right: 2px; bottom: 1px; }
+.subj { flex: 0 0 190px; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sname { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pill { flex: none; padding: 2px 6px; font-size: 10px; font-weight: 800; letter-spacing: .5px; color: #3157c9; background: #eef3ff; border-radius: 6px; }
+.pill.today { color: #15803d; background: var(--green-soft); }
+.edit,
+.done { flex: 1 1 0; display: flex; gap: 8px; min-width: 0; }
+.inp { flex: 1; min-width: 0; height: 30px; padding: 0 10px; font-size: 13px; background: #f8fafd; border: 1.5px solid #d8e0ec; border-radius: 9px; outline: none; transition: border-color .16s, background .16s, box-shadow .16s; }
+.inp::placeholder { color: #a3aebf; }
+.inp:focus { background: #fff; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(63, 109, 246, .13); }
+.iconbtn { flex: none; width: 30px; height: 30px; display: grid; place-items: center; font-size: 15px; color: #64718a; background: #fff; border: 1.5px solid #d8e0ec; border-radius: 9px; transition: .16s; }
+.iconbtn:hover { color: var(--accent); border-color: #b9caf3; background: var(--accent-soft); }
+.reset-btn:hover { color: var(--danger); border-color: #fecaca; background: #fef2f2; }
+.hwbox { position: relative; flex: 1; min-width: 0; height: 30px; display: flex; align-items: center; padding: 0 26px 0 10px; background: #fff; border: 1.5px solid #d8e0ec; border-radius: 9px; transition: .16s; }
+.hwbox.filled { background: var(--green-soft); border-color: #b9ecc9; }
+.hwtext { font-size: 13px; color: #33405a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hwbox.filled .hwtext { color: #15693a; }
+.check { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; display: none; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; color: #fff; background: #22c55e; border-radius: 50%; }
+.check.on { display: flex; }
+/* ---------- Пустое состояние ---------- */
+.empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 34px 20px; text-align: center; color: var(--muted); }
+.empty .emoji { font-size: 32px; margin-bottom: 4px; }
+.empty b { font-size: 15px; color: var(--ink); }
+.empty span { font-size: 13px; }
+/* --- Дни --- */
+.days-wrap { flex: 1; min-height: 0; display: flex; }
+.days-grid { flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 14px; min-height: 0; }
+.day-tile { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 14px; background: var(--panel); border: 1px solid #e9edf5; border-radius: 9px; box-shadow: var(--shadow); transition: transform .18s, box-shadow .18s, border-color .18s; }
+.day-tile:hover { transform: translateY(-3px); border-color: #cfdcf7; box-shadow: 0 16px 30px rgba(23, 35, 60, .13); }
+.day-tile.today { border-color: #bcd0fb; box-shadow: 0 0 0 3px rgba(63, 109, 246, .13), var(--shadow); }
+.day-big { font-size: clamp(36px, 6vh, 60px); font-weight: 800; letter-spacing: 4px; line-height: 1; }
+.day-full { font-size: 11px; letter-spacing: .6px; text-transform: uppercase; color: var(--muted); }
+.day-count { font-size: 12px; color: var(--muted); }
+.day-count b { margin-left: 4px; font-size: 16px; font-weight: 800; color: var(--accent); }
+.today-flag { position: absolute; top: 10px; right: 10px; padding: 3px 7px; font-size: 9.5px; font-weight: 800; letter-spacing: .5px; text-transform: uppercase; color: #15803d; background: #dcfce7; border-radius: 999px; }
+/* --- Расписание --- */
+.sched-wrap { flex: 1; min-height: 0; display: flex; overflow: auto; }
+.sched-grid { flex: 1; display: grid; grid-template-columns: 1fr; gap: 12px; align-content: start; }
+.sched-card { display: flex; flex-direction: column; min-height: 330px; padding: 10px 14px; background: var(--panel); border: 1px solid #e9edf5; border-radius: var(--radius); box-shadow: var(--shadow); }
+.sched-card.today { border-color: #bcd0fb; box-shadow: 0 0 0 3px rgba(63, 109, 246, .12), var(--shadow); }
+.sched-card header { display: flex; align-items: center; gap: 8px; padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid #eef2f8; }
+.sched-day { font-size: 18px; font-weight: 800; letter-spacing: .5px; }
+.sched-full { font-size: 11px; letter-spacing: .5px; text-transform: uppercase; color: var(--muted); }
+.sched-card header .today-flag { position: static; margin-left: auto; }
+.lessons { flex: 1; display: flex; flex-direction: column; justify-content: space-around; min-height: 0; list-style: none; }
+.lesson { display: flex; align-items: center; gap: 9px; font-size: 15px; min-height: 0; }
+.lesson-name { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.room { flex: none; padding: 2px 7px; font-size: 11px; font-weight: 700; color: #6f7c92; background: #f2f5fa; border-radius: 6px; }
+.sched-card .nb-lg { width: 34px; height: 37px; min-width: 34px; }
+.sched-card .nb-lg .ss { font-size: 16px; }
+.sched-card .nb-lg .bb { font-size: 9px; }
+/* --- Мобильная нижняя навигация --- */
+.mobile-nav { display: none; position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; justify-content: space-around; gap: 2px; padding: 6px 6px calc(6px + env(safe-area-inset-bottom)); background: rgba(255, 255, 255, .96); border-top: 1px solid var(--line); backdrop-filter: blur(10px); }
+.mobile-nav button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 4px; font-size: 10px; font-weight: 600; color: #8b96a8; border-radius: 11px; }
+.mobile-nav button.active { color: var(--accent); background: var(--accent-soft); }
+.mobile-nav .nav-icon { width: 20px; height: 20px; }
+.mobile-nav .nav-icon svg { width: 20px; height: 20px; }
+/* --- Модальное окно и уведомления --- */
+.modal { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(15, 21, 33, .5); backdrop-filter: blur(2px); }
+.modal.open { display: flex; }
+.modal-card { width: 100%; max-width: 390px; padding: 22px 24px; text-align: center; background: #fff; border-radius: 12px; box-shadow: 0 24px 60px rgba(10, 16, 32, .35); animation: pop .16s ease-out; }
+@keyframes pop {
+from { opacity: 0; transform: scale(.96); }
+to { opacity: 1; transform: scale(1); }
+}
+.modal-card h3 { font-size: 16px; margin-bottom: 6px; }
+.modal-card p { font-size: 13.5px; line-height: 1.45; color: var(--muted); margin-bottom: 18px; }
+.modal-actions { display: flex; gap: 10px; justify-content: center; }
+.btn { padding: 9px 24px; font-size: 14px; font-weight: 600; border-radius: 10px; transition: .16s; }
+.btn-primary { color: #fff; background: var(--accent); box-shadow: 0 8px 18px rgba(63, 109, 246, .32); }
+.btn-primary:hover { background: var(--accent-dark); }
+.btn-ghost { color: #4a5568; background: #eef1f7; }
+.btn-ghost:hover { background: #e3e8f2; }
+.toast { position: fixed; left: 50%; bottom: 26px; z-index: 120; padding: 9px 16px; font-size: 13px; font-weight: 600; color: #fff; background: #1c2434; border-radius: 999px; opacity: 0; pointer-events: none; transform: translate(-50%, 16px); transition: opacity .2s, transform .2s; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+/* --- Компьютер --- */
+@media (min-width: 821px) {
+.days-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+.sched-wrap { overflow: hidden; }
+.sched-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
+.sched-card { min-height: 0; }
+}
+@media (min-width: 821px) and (min-height: 600px) {
+.list--main .row { min-height: 34px; }
+}
+/* --- Телефон --- */
+@media (max-width: 820px) {
+.sidebar { display: none; }
+.mobile-nav { display: flex; }
+.screen { padding: 12px 12px 84px; gap: 10px; overflow: auto; }
+.topbar { gap: 8px; }
+.topbar-head { flex-wrap: wrap; gap: 2px 8px; }
+.topbar h1 { font-size: 18px; }
+.date-label { font-size: 11.5px; }
+.topbar-tools { width: 100%; }
+.search { flex: 1; height: 38px; }
+.search input { width: 100%; }
+.ghost-btn { width: 38px; height: 38px; }
+.list { background: transparent; border: none; box-shadow: none; overflow: visible; gap: 10px; flex: none; }
+.list--main .row,
+.list--day .row { display: grid; grid-template-columns: auto 1fr; grid-template-areas: "nb subj" "edit edit" "done done"; gap: 8px 10px; flex: none; min-height: 0; padding: 12px; background: var(--panel); border: 1px solid #e9edf5; border-radius: 8px; box-shadow: 0 4px 14px rgba(23, 35, 60, .05); }
+.nb { grid-area: nb; width: 38px; height: 43px; min-width: 38px; border-radius: 4px; }
+.nb .ss { font-size: 18px; }
+.nb .bb { font-size: 10px; right: 3px; bottom: 2px; }
+.subj { grid-area: subj; flex: none; }
+.sname { font-size: 16px; }
+.edit { grid-area: edit; }
+.done { grid-area: done; }
+.inp,
+.hwbox { height: 38px; }
+.inp { font-size: 14px; }
+.hwtext { font-size: 14px; }
+.iconbtn { width: 38px; height: 38px; font-size: 17px; }
+.check { width: 20px; height: 20px; }
+.day-tile { border-radius: 9px; }
+.day-big { font-size: 40px; }
+.sched-card { min-height: 340px; }
+.sched-card .nb-lg { width: 38px; height: 42px; min-width: 38px; }
+.sched-card .nb-lg .ss { font-size: 18px; }
+.lesson { font-size: 16px; }
+.toast { bottom: 86px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-text"><b>Домашка</b><small>домашние задания</small></div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-label">Меню</div>
+      <button class="nav-btn active" data-screen="main">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10 12 3.5 20.5 10"/><path d="M5.8 8.8V20h12.4V8.8"/><path d="M9.7 20v-5.6h4.6V20"/></svg></span>Главная
+      </button>
+      <button class="nav-btn" data-screen="days">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3.2v3.6M16 3.2v3.6M3.5 10.2h17"/></svg></span>Дни
+      </button>
+      <button class="nav-btn" data-screen="schedule">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3.1 1.9"/></svg></span>Расписание
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="diary-btn" id="diary-btn" title="Электронный дневник">
+        <span class="diary-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4H20v6.5"/><path d="M20 4l-8.8 8.8"/><path d="M18.5 14v4.2a1.8 1.8 0 0 1-1.8 1.8H5.3a1.8 1.8 0 0 1-1.8-1.8V6.8a1.8 1.8 0 0 1 1.8-1.8h4.2"/></svg></span>
+        <span><b>Электронный дневник</b><small>one.43edu.ru</small></span>
+      </button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <!-- ================= Главная ================= -->
+    <section class="screen active" id="screen-main">
+      <header class="topbar">
+        <div class="topbar-head">
+          <h1>Главная</h1>
+          <span class="date-label" id="today-label"></span>
+        </div>
+        <div class="topbar-tools">
+          <span class="chip">На сегодня <b id="stat-today">0</b></span>
+          <span class="chip">Всего <b id="stat-total">0</b></span>
+          <div class="search">
+            <span>🔍</span>
+            <input id="search" type="search" placeholder="Найти предмет" autocomplete="off">
+          </div>
+          <button class="ghost-btn" id="clear-all" title="Очистить всё дз">🗑</button>
+        </div>
+      </header>
+      <div class="list list--main" id="list-main"></div>
+    </section>
+
+    <!-- ================= Дни ================= -->
+    <section class="screen" id="screen-days">
+      <header class="topbar">
+        <div class="topbar-head">
+          <h1>Дни</h1>
+          <span class="date-label">выбери день — покажу только его дз</span>
+        </div>
+      </header>
+      <div class="days-wrap"><div class="days-grid" id="days-grid"></div></div>
+    </section>
+
+    <!-- ================= Расписание ================= -->
+    <section class="screen" id="screen-schedule">
+      <header class="topbar">
+        <div class="topbar-head">
+          <h1>Расписание</h1>
+          <span class="date-label">6 дней · 7 уроков</span>
+        </div>
+      </header>
+      <div class="sched-wrap"><div class="sched-grid" id="sched-grid"></div></div>
+    </section>
+
+    <!-- ================= Один день ================= -->
+    <section class="screen" id="screen-day">
+      <header class="topbar">
+        <button class="back-btn" id="back-btn" title="Назад к дням">←</button>
+        <div class="topbar-head">
+          <h1 id="day-title">—</h1>
+          <span class="date-label" id="day-sub"></span>
+        </div>
+      </header>
+      <div class="list list--day" id="list-day"></div>
+    </section>
+  </main>
+</div>
+
+<nav class="mobile-nav">
+  <button class="active" data-screen="main">
+    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10 12 3.5 20.5 10"/><path d="M5.8 8.8V20h12.4V8.8"/><path d="M9.7 20v-5.6h4.6V20"/></svg></span>Главная
+  </button>
+  <button data-screen="days">
+    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M8 3.2v3.6M16 3.2v3.6M3.5 10.2h17"/></svg></span>Дни
+  </button>
+  <button data-screen="schedule">
+    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3.1 1.9"/></svg></span>Расписание
+  </button>
+  <button id="diary-btn-mobile">
+    <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4H20v6.5"/><path d="M20 4l-8.8 8.8"/><path d="M18.5 14v4.2a1.8 1.8 0 0 1-1.8 1.8H5.3a1.8 1.8 0 0 1-1.8-1.8V6.8a1.8 1.8 0 0 1 1.8-1.8h4.2"/></svg></span>Дневник
+  </button>
+</nav>
+
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <h3 id="modal-title">Подтверждение</h3>
+    <p id="modal-text"></p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="modal-yes">Да</button>
+      <button class="btn btn-ghost" id="modal-no">Нет</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   ДЗ+ (test_site) — трекер домашних заданий
+   ------------------------------------------------------------
+   Данные: localStorage, ключ "test_site_hw".
+   При первом запуске подхватываются данные основной версии ("hw").
+   Формат: { "Алгебра": { text: "№ 1–5", day: "СР" } }
+   ============================================================ */
+
+/* ---------- Предметы ---------- */
+
+/* Цвета подобраны так, чтобы похожие предметы (физика и физкультура,
+   геометрия и химия) не сливались: отличаются оттенком, а не цветом. */
+
+/* Флаг Великобритании: эмодзи 🇬🇧 на Windows рисуется как «GB»,
+   поэтому значок английского — маленькая встроенная SVG-картинка. */
+const UK_FLAG =
+  '<svg class="flag" viewBox="0 0 60 30" aria-hidden="true">' +
+    '<rect width="60" height="30" fill="#012169"/>' +
+    '<path d="M0 0l60 30M60 0L0 30" stroke="#fff" stroke-width="6"/>' +
+    '<path d="M0 0l60 30M60 0L0 30" stroke="#c8102e" stroke-width="2"/>' +
+    '<path d="M30 0v30M0 15h60" stroke="#fff" stroke-width="10"/>' +
+    '<path d="M30 0v30M0 15h60" stroke="#c8102e" stroke-width="6"/>' +
+  '</svg>';
+
+const SUBJECTS = {
+  'Физика':                 { code: 'Ф',  icon: '⚛️',  color: '#f97316' },
+  'Обществознание':         { code: 'ОБ', icon: '🏛️',  color: '#ca8a04' },
+  'Программирование':       { code: 'ПР', icon: '💻',  color: '#1d4ed8' },
+  'Алгебра':                { code: 'АЛ', icon: '➗',  color: '#60a5fa' },
+  'Русский язык':           { code: 'РУ', icon: '✒️',  color: '#dc2626' },
+  'Геометрия':              { code: 'ГЕ', icon: '📐',  color: '#16a34a' },
+  'Биология':               { code: 'БИ', icon: '🧬',  color: '#14532d' },
+  'География':              { code: 'ГГ', icon: '🌍',  color: '#0d9488' },
+  'Математика (с.к)':       { code: 'МК', icon: '🧮',  color: '#64748b' },
+  'История':                { code: 'ИС', icon: '🏺',  color: '#78350f' },
+  'Информатика':            { code: 'ИН', icon: '⌨️',  color: '#334155' },
+  'ОБиЗР':                  { code: 'ОЗ', icon: '🚦',  color: '#b45309' },
+  'Литература':             { code: 'ЛИ', icon: '📚',  color: '#881337' },
+  'МХК':                    { code: 'МХ', icon: '🎨',  color: '#ec4899' },
+  'Химия':                  { code: 'ХИ', icon: '⚗️',  color: '#84cc16' },
+  'Вероятность':            { code: 'ВЕ', icon: '🎲',  color: '#7c3aed' },
+  'Матан ЕГЭ':              { code: 'МЕ', icon: '🎓',  color: '#1e3a8a' },
+  'Разговоры о важном':     { code: 'РВ', icon: '💬',  color: '#9ca3af' },
+  'Английский язык':        { code: 'АН', icon: UK_FLAG,  color: '#0891b2' },
+  'Россия — мои горизонты': { code: 'РМ', icon: '🗺️',  color: '#3f6212' },
+  'Физика (с.к)':           { code: 'Ф',  icon: '⚛️',  color: '#f97316' },
+  'Физическая культура':    { code: 'ФК', icon: '⚽',  color: '#fbbf24' }
+};
+
+const MAIN_SUBJECTS = [
+  'Физика', 'Обществознание', 'Программирование', 'Алгебра',
+  'Русский язык', 'Геометрия', 'Биология', 'География',
+  'Математика (с.к)', 'История', 'Информатика', 'ОБиЗР',
+  'Литература', 'МХК', 'Химия', 'Вероятность', 'Матан ЕГЭ',
+  'Физика (с.к)'
+];
+
+/* ---------- Дни ---------- */
+const WEEK_DAYS = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ'];
+
+const WEEK_FULL = {
+  'ПН': 'Понедельник', 'ВТ': 'Вторник', 'СР': 'Среда',
+  'ЧТ': 'Четверг', 'ПТ': 'Пятница', 'СБ': 'Суббота'
+};
+
+/* В какие дни задают предмет */
+const SUBJECTS_BY_DAY = {
+  'ПН': ['Физика', 'Обществознание', 'Программирование', 'Алгебра'],
+  'ВТ': ['Физика', 'Русский язык', 'Геометрия', 'Матан ЕГЭ'],
+  'СР': ['Биология', 'Алгебра', 'География', 'Математика (с.к)', 'Русский язык'],
+  'ЧТ': ['История', 'Геометрия', 'Информатика', 'Русский язык'],
+  'ПТ': ['ОБиЗР', 'Литература', 'Физика'],
+  'СБ': ['Физика (с.к)', 'МХК', 'Химия', 'Геометрия', 'Вероятность']
+};
+
+/* Расписание уроков: день → [ [предмет, кабинет], ... ] */
+const LESSONS = {
+  'ПН': [['Разговоры о важном', '313'], ['Физика', '313'], ['Обществознание', '105'], ['Программирование', '207'], ['Алгебра', '204'], ['Алгебра', '204'], ['Обществознание', '105']],
+  'ВТ': [['Физика', '313'], ['Физика', '313'], ['Русский язык', '309'], ['Русский язык', '309'], ['Английский язык', '206'], ['Геометрия', '204'], ['Матан ЕГЭ', '204']],
+  'СР': [['Биология', '312'], ['Алгебра', '204'], ['Алгебра', '204'], ['География', '314'], ['Математика (с.к)', '210'], ['Математика (с.к)', '210'], ['Русский язык', '309']],
+  'ЧТ': [['Физика', '313'], ['История', '105'], ['История', '105'], ['Геометрия', '204'], ['Английский язык', '206'], ['Информатика', '207'], ['Русский язык', '309']],
+  'ПТ': [['ОБиЗР', '105'], ['Литература', '309'], ['Литература', '309'], ['Физика', '313'], ['Физика', '313'], ['Физическая культура', 'зал'], ['Физическая культура', 'зал']],
+  'СБ': [['Физика (с.к)', '212'], ['Физика (с.к)', '212'], ['МХК', '108'], ['Химия', '312'], ['Геометрия', '204'], ['Вероятность', '204'], ['Английский язык', '206']]
+};
+
+const DIARY_URL = 'https://one.43edu.ru/auth/login';
+const STORAGE_KEY = 'test_site_hw';
+const LEGACY_KEY = 'hw';
+
+/* ---------- Состояние ---------- */
+const homework = {};
+let currentDay = null;
+let activeScreenId = 'screen-main';
+let confirmAction = null;
+let toastTimer = null;
+
+/* ---------- Элементы ---------- */
+const ui = {
+  screens: document.querySelectorAll('.screen'),
+  screenButtons: document.querySelectorAll('[data-screen]'),
+  listMain: document.getElementById('list-main'),
+  listDay: document.getElementById('list-day'),
+  daysGrid: document.getElementById('days-grid'),
+  schedGrid: document.getElementById('sched-grid'),
+  todayLabel: document.getElementById('today-label'),
+  statToday: document.getElementById('stat-today'),
+  statTotal: document.getElementById('stat-total'),
+  search: document.getElementById('search'),
+  clearAll: document.getElementById('clear-all'),
+  dayTitle: document.getElementById('day-title'),
+  daySub: document.getElementById('day-sub'),
+  backBtn: document.getElementById('back-btn'),
+  modal: document.getElementById('modal'),
+  modalTitle: document.getElementById('modal-title'),
+  modalText: document.getElementById('modal-text'),
+  modalYes: document.getElementById('modal-yes'),
+  modalNo: document.getElementById('modal-no'),
+  toast: document.getElementById('toast'),
+  diaryDesktop: document.getElementById('diary-btn'),
+  diaryMobile: document.getElementById('diary-btn-mobile')
+};
+
+/* ============================================================
+   Даты
+   ============================================================ */
+function todayIndex() {
+  return (new Date().getDay() + 6) % 7; /* 0 = ПН … 6 = ВС */
+}
+
+function currentWeekDay() {
+  return WEEK_DAYS[todayIndex()] || null;
+}
+
+/* Ближайший день по расписанию, начиная с сегодняшнего */
+function nearestStudyDay(subject) {
+  const start = todayIndex();
+
+  for (let offset = 0; offset < 7; offset++) {
+    const index = (start + offset) % 7;
+    if (index > 5) continue; /* воскресенья в расписании нет */
+
+    const day = WEEK_DAYS[index];
+    if ((SUBJECTS_BY_DAY[day] || []).includes(subject)) return day;
+  }
+
+  return null;
+}
+
+function dateForWeekday(index) {
+  const today = new Date();
+  const diff = (index - todayIndex() + 7) % 7;
+  return new Date(today.getFullYear(), today.getMonth(), today.getDate() + diff);
+}
+
+function formatDate(date) {
+  return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
+}
+
+function formatToday() {
+  const text = new Date().toLocaleDateString('ru-RU', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  });
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function plural(count, one, few, many) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+
+  if (mod10 === 1 && mod100 !== 11) return one;
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) return few;
+  return many;
+}
+
+/* ============================================================
+   Данные
+   ============================================================ */
+function homeworkText(subject) {
+  return (homework[subject] || {}).text || '';
+}
+
+function homeworkDay(subject) {
+  return (homework[subject] || {}).day || null;
+}
+
+function readJson(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || 'null');
+  } catch (error) {
+    return null;
+  }
+}
+
+function persist() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(homework));
+  } catch (error) {
+    /* при отключённом localStorage данные живут до перезагрузки */
+  }
+}
+
+function loadHomework() {
+  let stored = readJson(STORAGE_KEY);
+
+  /* первый запуск: переносим данные из основной версии */
+  if (stored === null) stored = readJson(LEGACY_KEY);
+
+  if (!stored || typeof stored !== 'object') return;
+
+  let needsSave = false;
+
+  Object.keys(stored).forEach((subject) => {
+    if (!SUBJECTS[subject]) return;
+
+    const value = stored[subject];
+
+    if (typeof value === 'string') {
+      if (value.trim()) {
+        homework[subject] = { text: value, day: nearestStudyDay(subject) };
+        needsSave = true;
+      }
+      return;
+    }
+
+    const text = value && (value.text || value.t);
+    if (typeof text === 'string' && text.trim()) {
+      homework[subject] = {
+        text: text,
+        day: value.day || value.d || nearestStudyDay(subject)
+      };
+      needsSave = true;
+    }
+  });
+
+  if (needsSave) persist();
+}
+
+function saveHomework(subject, rawValue) {
+  const text = String(rawValue || '').trim();
+
+  if (!text) {
+    delete homework[subject];
+  } else {
+    const previous = homework[subject];
+
+    if (previous && previous.text === text) {
+      if (!previous.day) previous.day = nearestStudyDay(subject);
+    } else {
+      homework[subject] = { text: text, day: nearestStudyDay(subject) };
+    }
+  }
+
+  persist();
+  refreshScreen();
+}
+
+function removeHomework(subject) {
+  delete homework[subject];
+  persist();
+  refreshScreen();
+}
+
+function countForDay(day) {
+  return (SUBJECTS_BY_DAY[day] || []).filter((subject) => homeworkDay(subject) === day).length;
+}
+
+/* ============================================================
+   Разметка
+   ============================================================ */
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function darken(hex, factor = 0.6) {
+  const number = parseInt(hex.slice(1), 16);
+  const r = Math.round(((number >> 16) & 255) * factor);
+  const g = Math.round(((number >> 8) & 255) * factor);
+  const b = Math.round((number & 255) * factor);
+  return `rgb(${r},${g},${b})`;
+}
+
+function notebook(subject, large = false) {
+  const meta = SUBJECTS[subject];
+  if (!meta) return '';
+
+  return `<span class="nb${large ? ' nb-lg' : ''}" style="background:${meta.color}">
+    <span class="ss">${meta.icon}</span>
+    <span class="bb" style="color:${darken(meta.color)}">${meta.code}</span>
+  </span>`;
+}
+
+function subjectRow(subject, showDay) {
+  const text = homeworkText(subject);
+  const day = homeworkDay(subject);
+  const isToday = day && day === currentWeekDay();
+
+  const pill = showDay && day
+    ? `<span class="pill${isToday ? ' today' : ''}" title="Дз на ${WEEK_FULL[day].toLowerCase()}">${day}</span>`
+    : '';
+
+  const titleAttr = text ? ` title="${escapeHtml(text)}"` : '';
+
+  return `<div class="row" data-subject="${escapeHtml(subject)}">
+    ${notebook(subject)}
+    <div class="subj"><span class="sname">${subject}</span>${pill}</div>
+    <div class="edit">
+      <input class="inp" placeholder="Новое дз…" autocomplete="off">
+      <button class="iconbtn reset-btn" title="Сбросить дз">⟳</button>
+    </div>
+    <div class="done">
+      <div class="hwbox${text ? ' filled' : ''}"${titleAttr}>
+        <span class="hwtext">${escapeHtml(text)}</span>
+        <span class="check${text ? ' on' : ''}">✓</span>
+      </div>
+      <button class="iconbtn copy-btn" title="Скопировать">⧉</button>
+    </div>
+  </div>`;
+}
+
+function emptyState(emoji, title, subtitle) {
+  return `<div class="empty">
+    <div class="emoji">${emoji}</div>
+    <b>${title}</b>
+    <span>${subtitle}</span>
+  </div>`;
+}
+
+/* ============================================================
+   Отрисовка
+   ============================================================ */
+function renderMain() {
+  const query = ui.search.value.trim().toLowerCase();
+  const visible = MAIN_SUBJECTS.filter((subject) => subject.toLowerCase().includes(query));
+
+  ui.listMain.innerHTML = visible.length
+    ? visible.map((subject) => subjectRow(subject, true)).join('')
+    : emptyState('🔍', 'Ничего не нашлось', 'Попробуй другой запрос');
+
+  updateStats();
+}
+
+function updateStats() {
+  const today = currentWeekDay();
+  const entries = MAIN_SUBJECTS.filter((subject) => homeworkText(subject));
+
+  ui.statToday.textContent = entries.filter((subject) => homeworkDay(subject) === today).length;
+  ui.statTotal.textContent = entries.length;
+}
+
+function renderDays() {
+  const today = currentWeekDay();
+
+  ui.daysGrid.innerHTML = WEEK_DAYS.map((day) => {
+    const isToday = day === today;
+
+    return `<button class="day-tile${isToday ? ' today' : ''}" data-day="${day}">
+      ${isToday ? '<span class="today-flag">сегодня</span>' : ''}
+      <span class="day-big">${day}</span>
+      <span class="day-full">${WEEK_FULL[day]}</span>
+      <span class="day-count">Кол-во: <b>${countForDay(day)}</b></span>
+    </button>`;
+  }).join('');
+}
+
+function renderSchedule() {
+  const today = currentWeekDay();
+
+  ui.schedGrid.innerHTML = WEEK_DAYS.map((day) => {
+    const isToday = day === today;
+
+    const lessons = LESSONS[day].map(([subject, room]) => `
+      <li class="lesson">
+        ${notebook(subject, true)}
+        <span class="lesson-name">${subject}</span>
+        ${room ? `<span class="room">${room}</span>` : ''}
+      </li>`).join('');
+
+    return `<article class="sched-card${isToday ? ' today' : ''}">
+      <header>
+        <span class="sched-day">${day}</span>
+        <span class="sched-full">${WEEK_FULL[day]}</span>
+        ${isToday ? '<span class="today-flag">сегодня</span>' : ''}
+      </header>
+      <ul class="lessons">${lessons}</ul>
+    </article>`;
+  }).join('');
+}
+
+function renderDay() {
+  if (!currentDay) return;
+
+  const list = (SUBJECTS_BY_DAY[currentDay] || []).filter((subject) => homeworkDay(subject) === currentDay);
+  const date = formatDate(dateForWeekday(WEEK_DAYS.indexOf(currentDay)));
+
+  ui.dayTitle.textContent = `${currentDay} — ${WEEK_FULL[currentDay]}`;
+  ui.daySub.textContent = `${date} · ${list.length} ${plural(list.length, 'предмет', 'предмета', 'предметов')} с дз`;
+
+  ui.listDay.innerHTML = list.length
+    ? list.map((subject) => subjectRow(subject, false)).join('')
+    : emptyState('🎉', 'На этот день дз нет', 'Можно спокойно отдыхать');
+}
+
+function refreshScreen() {
+  if (activeScreenId === 'screen-main') renderMain();
+  if (activeScreenId === 'screen-day') renderDay();
+
+  renderDays();
+  updateStats();
+}
+
+/* ============================================================
+   Навигация
+   ============================================================ */
+function showScreen(name) {
+  activeScreenId = `screen-${name}`;
+
+  ui.screens.forEach((screen) => screen.classList.toggle('active', screen.id === activeScreenId));
+  ui.screenButtons.forEach((button) => button.classList.toggle('active', button.dataset.screen === name));
+
+  if (name === 'main') renderMain();
+  if (name === 'days') renderDays();
+  if (name === 'schedule') renderSchedule();
+  if (name === 'day') renderDay();
+}
+
+function rowSubject(element) {
+  return element.closest('.row').dataset.subject;
+}
+
+/* ============================================================
+   Диалоги и уведомления
+   ============================================================ */
+function confirmDialog(title, text, action) {
+  confirmAction = action;
+  ui.modalTitle.textContent = title;
+  ui.modalText.textContent = text;
+  ui.modal.classList.add('open');
+}
+
+function closeDialog() {
+  ui.modal.classList.remove('open');
+  confirmAction = null;
+}
+
+function toast(message) {
+  ui.toast.textContent = message;
+  ui.toast.classList.add('on');
+
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => ui.toast.classList.remove('on'), 1800);
+}
+
+/* ============================================================
+   Действия
+   ============================================================ */
+function askReset(subject) {
+  if (!homeworkText(subject)) {
+    toast('По этому предмету дз нет');
+    return;
+  }
+
+  confirmDialog('Сброс дз', `Удалить дз по предмету «${subject}»?`, () => {
+    removeHomework(subject);
+    toast('Дз удалено');
+  });
+}
+
+function copyHomework(subject) {
+  const text = homeworkText(subject);
+
+  if (!text) {
+    toast('Дз пока не задано');
+    return;
+  }
+
+  copyText(text);
+  toast('Скопировано');
+}
+
+function copyText(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const area = document.createElement('textarea');
+  area.value = text;
+  document.body.appendChild(area);
+  area.select();
+
+  try { document.execCommand('copy'); } catch (error) {}
+  document.body.removeChild(area);
+}
+
+function askClearAll() {
+  const count = MAIN_SUBJECTS.filter((subject) => homeworkText(subject)).length;
+
+  if (!count) {
+    toast('Список уже пуст');
+    return;
+  }
+
+  confirmDialog(
+    'Очистка',
+    `Удалить всё дз (${count} ${plural(count, 'предмет', 'предмета', 'предметов')})?`,
+    () => {
+      Object.keys(homework).forEach((subject) => delete homework[subject]);
+      persist();
+      refreshScreen();
+      toast('Все дз удалены');
+    }
+  );
+}
+
+function askOpenDiary() {
+  confirmDialog(
+    'Электронный дневник',
+    'Открыть one.43edu.ru в новой вкладке? Вход сохраняется в браузере, так что повторно вводить пароль не придётся.',
+    () => window.open(DIARY_URL, '_blank', 'noopener')
+  );
+}
+
+/* ============================================================
+   События
+   ============================================================ */
+function onClick(event) {
+  const navButton = event.target.closest('[data-screen]');
+  if (navButton) {
+    showScreen(navButton.dataset.screen);
+    return;
+  }
+
+  const tile = event.target.closest('.day-tile');
+  if (tile) {
+    currentDay = tile.dataset.day;
+    showScreen('day');
+    return;
+  }
+
+  const resetButton = event.target.closest('.reset-btn');
+  if (resetButton) {
+    askReset(rowSubject(resetButton));
+    return;
+  }
+
+  const copyButton = event.target.closest('.copy-btn');
+  if (copyButton) {
+    copyHomework(rowSubject(copyButton));
+    return;
+  }
+
+  if (event.target.closest('#diary-btn') || event.target.closest('#diary-btn-mobile')) {
+    askOpenDiary();
+    return;
+  }
+
+  if (event.target.closest('#clear-all')) {
+    askClearAll();
+    return;
+  }
+
+  if (event.target.closest('#back-btn')) {
+    showScreen('days');
+  }
+}
+
+function onKeydown(event) {
+  if (event.key === 'Enter' && event.target.classList.contains('inp')) {
+    event.preventDefault();
+    saveHomework(rowSubject(event.target), event.target.value);
+  }
+
+  if (event.key === 'Escape' && ui.modal.classList.contains('open')) {
+    closeDialog();
+  }
+}
+
+function init() {
+  loadHomework();
+
+  ui.todayLabel.textContent = formatToday();
+  renderMain();
+  renderDays();
+  renderSchedule();
+
+  document.addEventListener('click', onClick);
+  document.addEventListener('keydown', onKeydown);
+  ui.search.addEventListener('input', renderMain);
+
+  ui.modalYes.addEventListener('click', () => {
+    const action = confirmAction;
+    closeDialog();
+    if (action) action();
+  });
+
+  ui.modalNo.addEventListener('click', closeDialog);
+}
+
+init();
+</script>
+</body>
+</html>
