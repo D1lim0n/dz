@@ -24,9 +24,6 @@ button { background: none; border: none; cursor: pointer; }
 ::-webkit-scrollbar-thumb:hover { background: #b3c0d6; }
 ::-webkit-scrollbar-track { background: transparent; }
 /* --- Каркас --- */
-/* Высота приложения: 100vh в мобильных браузерах (Яндекс) выше видимой
-   области из-за адресной строки, поэтому используем динамическую высоту
-   и страховку через JS (--app-h). */
 .app { display: flex; height: 100vh; height: 100dvh; height: var(--app-h, 100dvh); }
 /* ---------- Боковое меню ---------- */
 .sidebar { width: 200px; flex: 0 0 200px; display: flex; flex-direction: column; gap: 20px; padding: 18px 12px; background: #fbfcff; border-right: 1px solid var(--line); }
@@ -398,7 +395,7 @@ const UK_FLAG =
   '</svg>';
 
 const SUBJECTS = {
-  'Физика':                 { code: 'Ф',  icon: '⚛️',  color: '#f97316' },
+  'Физика':                 { code: 'ФИ',  icon: '⚛️',  color: '#f97316' },
   'Обществознание':         { code: 'ОБ', icon: '🏛️',  color: '#ca8a04' },
   'Программирование':       { code: 'ПР', icon: '💻',  color: '#1d4ed8' },
   'Алгебра':                { code: 'АЛ', icon: '➗',  color: '#60a5fa' },
@@ -418,7 +415,7 @@ const SUBJECTS = {
   'Разговоры о важном':     { code: 'РВ', icon: '💬',  color: '#9ca3af' },
   'Английский язык':        { code: 'АН', icon: UK_FLAG,  color: '#0891b2' },
   'Россия — мои горизонты': { code: 'РМ', icon: '🗺️',  color: '#3f6212' },
-  'Физика (с.к)':           { code: 'Ф',  icon: '⚛️',  color: '#f97316' },
+  'Физика (с.к)':           { code: 'ФИ',  icon: '⚛️',  color: '#f97316' },
   'Физическая культура':    { code: 'ФК', icon: '⚽',  color: '#fbbf24' }
 };
 
