@@ -137,6 +137,14 @@ button { background: none; border: none; cursor: pointer; }
 .mobile-nav button.active { color: var(--accent); background: var(--accent-soft); }
 .mobile-nav .nav-icon { width: 20px; height: 20px; }
 .mobile-nav .nav-icon svg { width: 20px; height: 20px; }
+
+/* Кнопка «свернуть нижнее меню» — только на телефоне */
+.nav-toggle { display: none; }
+.nav-toggle .chev-up { display: none; }
+body.nav-collapsed .nav-toggle .chev-up { display: block; }
+body.nav-collapsed .nav-toggle .chev-down { display: none; }
+body.nav-collapsed .mobile-nav { transform: translateY(110%); opacity: 0; pointer-events: none; }
+.mobile-nav { transition: transform .22s ease, opacity .22s ease; }
 /* --- Модальное окно и уведомления --- */
 .modal { position: fixed; inset: 0; z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(15, 21, 33, .5); backdrop-filter: blur(2px); }
 .modal.open { display: flex; }
@@ -170,11 +178,15 @@ to { opacity: 1; transform: scale(1); }
 .sidebar { display: none; }
 .mobile-nav { display: flex; }
 
-/* экран целиком, без внешней прокрутки */
-.screen { padding: 10px 10px calc(62px + env(safe-area-inset-bottom)); gap: 8px; overflow: hidden; }
+/* экран целиком, без внешней прокрутки; снизу оставляем ровно высоту меню */
+.screen { padding: 10px 10px calc(var(--nav-h, 62px) + 10px + env(safe-area-inset-bottom)); gap: 8px; overflow: hidden; }
+
+/* кнопка сворачивания меню в правом верхнем углу */
+.nav-toggle { display: grid; position: fixed; top: 8px; right: 8px; z-index: 45; background: rgba(255, 255, 255, .92); backdrop-filter: blur(6px); }
+.nav-toggle svg { width: 16px; height: 16px; }
 
 /* компактная шапка: заголовок + одна строка инструментов */
-.topbar { gap: 6px; }
+.topbar { gap: 6px; padding-right: 38px; }
 .topbar-head { flex-wrap: nowrap; gap: 8px; }
 .topbar h1 { font-size: 17px; }
 .date-label { font-size: 10.5px; }
@@ -207,18 +219,18 @@ to { opacity: 1; transform: scale(1); }
 .list .hwtext { font-size: 11.5px; }
 .list .check { width: 14px; height: 14px; font-size: 8px; right: 3px; }
 
-/* Дни: 2×3 на всю высоту */
+/* Дни: 2 столбца × 3 строки, порядок сверху вниз: ПН/ВТ/СР, затем ЧТ/ПТ/СБ */
 .days-wrap { flex: 1; min-height: 0; }
-.days-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 8px; }
+.days-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); grid-auto-flow: column; gap: 8px; }
 .day-tile { padding: 8px; gap: 3px; border-radius: 9px; }
 .day-big { font-size: clamp(28px, 7vh, 44px); letter-spacing: 2px; }
 .day-full { font-size: 9px; }
 .day-count { font-size: 10px; }
 .today-flag { top: 6px; right: 6px; padding: 2px 5px; font-size: 8px; }
 
-/* Расписание: 2×3, все 6 карточек в одном экране */
+/* Расписание: 2×3, порядок сверху вниз: ПН/ВТ/СР, затем ЧТ/ПТ/СБ */
 .sched-wrap { flex: 1; min-height: 0; overflow: hidden; }
-.sched-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); gap: 8px; align-content: stretch; height: 100%; }
+.sched-grid { grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(3, 1fr); grid-auto-flow: column; gap: 8px; align-content: stretch; height: 100%; }
 .sched-card { min-height: 0; padding: 6px 8px; overflow: hidden; }
 .sched-card header { gap: 5px; padding-bottom: 3px; margin-bottom: 3px; }
 .sched-day { font-size: 13px; }
@@ -335,6 +347,14 @@ to { opacity: 1; transform: scale(1); }
     <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13.5 4H20v6.5"/><path d="M20 4l-8.8 8.8"/><path d="M18.5 14v4.2a1.8 1.8 0 0 1-1.8 1.8H5.3a1.8 1.8 0 0 1-1.8-1.8V6.8a1.8 1.8 0 0 1 1.8-1.8h4.2"/></svg></span>Дневник
   </button>
 </nav>
+
+<!-- Телефон: кнопка сворачивает/разворачивает нижнее меню -->
+<button class="ghost-btn nav-toggle" id="nav-toggle" title="Свернуть меню" aria-expanded="true">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path class="chev-down" d="M7 10l5 5 5-5"/>
+    <path class="chev-up" d="M7 14l5-5 5 5"/>
+  </svg>
+</button>
 
 <div class="modal" id="modal">
   <div class="modal-card">
@@ -467,6 +487,8 @@ const ui = {
   modalText: document.getElementById('modal-text'),
   modalYes: document.getElementById('modal-yes'),
   modalNo: document.getElementById('modal-no'),
+  mobileNav: document.querySelector('.mobile-nav'),
+  navToggle: document.getElementById('nav-toggle'),
   toast: document.getElementById('toast'),
   diaryDesktop: document.getElementById('diary-btn'),
   diaryMobile: document.getElementById('diary-btn-mobile')
@@ -814,6 +836,25 @@ function rowSubject(element) {
 }
 
 /* ============================================================
+   Телефон: сворачивание нижнего меню
+   ============================================================ */
+
+/* Высота меню может отличаться на разных телефонах, поэтому измеряем её
+   и подставляем в отступ экрана — тогда список никогда не прячется под меню. */
+function syncNavSpace() {
+  const collapsed = document.body.classList.contains('nav-collapsed');
+  const height = collapsed ? 0 : ui.mobileNav.offsetHeight;
+  document.documentElement.style.setProperty('--nav-h', `${height}px`);
+}
+
+function toggleNav() {
+  const collapsed = document.body.classList.toggle('nav-collapsed');
+  ui.navToggle.title = collapsed ? 'Развернуть меню' : 'Свернуть меню';
+  ui.navToggle.setAttribute('aria-expanded', String(!collapsed));
+  syncNavSpace();
+}
+
+/* ============================================================
    Диалоги и уведомления
    ============================================================ */
 function confirmDialog(title, text, action) {
@@ -948,6 +989,11 @@ function onClick(event) {
     return;
   }
 
+  if (event.target.closest('#nav-toggle')) {
+    toggleNav();
+    return;
+  }
+
   if (event.target.closest('#back-btn')) {
     showScreen('days');
   }
@@ -986,6 +1032,11 @@ function init() {
 
   if (PHONE_MEDIA.addEventListener) PHONE_MEDIA.addEventListener('change', rerenderForLayout);
   else PHONE_MEDIA.addListener(rerenderForLayout);
+
+  /* высота нижнего меню -> отступ экрана, чтобы список не прятался под ним */
+  syncNavSpace();
+  window.addEventListener('resize', syncNavSpace);
+  window.addEventListener('load', syncNavSpace);
 
   ui.modalYes.addEventListener('click', () => {
     const action = confirmAction;
