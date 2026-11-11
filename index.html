@@ -13,7 +13,7 @@
 *::before,
 *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html,
-body { height: 100%; }
+body { height: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; color: var(--ink); background: radial-gradient(1100px 520px at 85% -10%, #e2eaff 0%, rgba(226, 234, 255, 0) 60%), var(--bg); overflow: hidden; }
 button,
 input { font: inherit; color: inherit; }
@@ -24,7 +24,10 @@ button { background: none; border: none; cursor: pointer; }
 ::-webkit-scrollbar-thumb:hover { background: #b3c0d6; }
 ::-webkit-scrollbar-track { background: transparent; }
 /* --- Каркас --- */
-.app { display: flex; height: 100vh; }
+/* Высота приложения: 100vh в мобильных браузерах (Яндекс) выше видимой
+   области из-за адресной строки, поэтому используем динамическую высоту
+   и страховку через JS (--app-h). */
+.app { display: flex; height: 100vh; height: 100dvh; height: var(--app-h, 100dvh); }
 /* ---------- Боковое меню ---------- */
 .sidebar { width: 200px; flex: 0 0 200px; display: flex; flex-direction: column; gap: 20px; padding: 18px 12px; background: #fbfcff; border-right: 1px solid var(--line); }
 .brand { display: block; padding: 0; text-align: center; }
@@ -854,6 +857,13 @@ function toggleNav() {
   syncNavSpace();
 }
 
+/* Старые мобильные браузеры (часто в приложении Яндекса) не знают 100dvh —
+   для них ставим высоту окна вручную через --app-h. */
+function syncViewport() {
+  if (window.CSS && CSS.supports && CSS.supports('height', '100dvh')) return;
+  document.documentElement.style.setProperty('--app-h', `${window.innerHeight}px`);
+}
+
 /* ============================================================
    Диалоги и уведомления
    ============================================================ */
@@ -1035,8 +1045,15 @@ function init() {
 
   /* высота нижнего меню -> отступ экрана, чтобы список не прятался под ним */
   syncNavSpace();
-  window.addEventListener('resize', syncNavSpace);
-  window.addEventListener('load', syncNavSpace);
+  syncViewport();
+  window.addEventListener('resize', () => {
+    syncViewport();
+    syncNavSpace();
+  });
+  window.addEventListener('load', () => {
+    syncViewport();
+    syncNavSpace();
+  });
 
   ui.modalYes.addEventListener('click', () => {
     const action = confirmAction;
