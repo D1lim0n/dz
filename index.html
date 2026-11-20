@@ -24,6 +24,9 @@ button { background: none; border: none; cursor: pointer; }
 ::-webkit-scrollbar-thumb:hover { background: #b3c0d6; }
 ::-webkit-scrollbar-track { background: transparent; }
 /* --- Каркас --- */
+/* Высота приложения: 100vh в мобильных браузерах (Яндекс) выше видимой
+   области из-за адресной строки, поэтому используем динамическую высоту
+   и страховку через JS (--app-h). */
 .app { display: flex; height: 100vh; height: 100dvh; height: var(--app-h, 100dvh); }
 /* ---------- Боковое меню ---------- */
 .sidebar { width: 200px; flex: 0 0 200px; display: flex; flex-direction: column; gap: 20px; padding: 18px 12px; background: #fbfcff; border-right: 1px solid var(--line); }
@@ -163,12 +166,53 @@ to { opacity: 1; transform: scale(1); }
 .btn-ghost:hover { background: #e3e8f2; }
 .toast { position: fixed; left: 50%; bottom: 26px; z-index: 120; padding: 9px 16px; font-size: 13px; font-weight: 600; color: #fff; background: #1c2434; border-radius: 999px; opacity: 0; pointer-events: none; transform: translate(-50%, 16px); transition: opacity .2s, transform .2s; }
 .toast.on { opacity: 1; transform: translate(-50%, 0); }
+/* ---------- Время ---------- */
+.time-wrap { position: relative; flex: 1; min-height: 0; }
+.time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; height: 100%; }
+
+/* большая цифра урока — золотисто-коричневая, полупрозрачная, справа на фоне */
+.time-digit { position: absolute; right: 1%; top: 50%; transform: translateY(-50%); z-index: 2; font-size: min(44vh, 20vw); font-weight: 800; line-height: .9; color: #8a6218; opacity: .16; pointer-events: none; user-select: none; }
+
+.time-card { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 0; background: var(--panel); border: 1px solid #e9edf5; border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.time-card.today { border-color: #bcd0fb; box-shadow: 0 0 0 3px rgba(63, 109, 246, .12), var(--shadow); }
+.time-card header { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid var(--line); }
+.time-card header .today-flag { position: static; padding: 2px 6px; font-size: 9px; }
+.time-day { font-size: 14px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; }
+.time-full { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; }
+.time-phase { margin-left: auto; font-size: 11px; font-weight: 600; color: var(--muted); }
+.time-phase.now { color: #b45309; }
+.time-phase.done { color: #17804a; }
+
+.time-rows { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: center; gap: 3px; padding: 5px; }
+.t-row { flex: 0 1 auto; min-height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 10px; border: 1px solid transparent; border-radius: 7px; }
+.t-row.done { background: var(--green-soft); }
+.t-row.now { background: #fff3e3; border-color: #f5c489; }
+.t-num { width: 14px; font-size: 12px; font-weight: 700; color: #9aa5b7; text-align: center; }
+.t-row.done .t-num { color: #17804a; }
+.t-row.now .t-num { color: #b45309; }
+.t-name { flex: 1; min-width: 0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.t-time { font-size: 12.5px; color: #5b6577; font-variant-numeric: tabular-nums; }
+.t-left { width: 76px; text-align: right; font-size: 11px; color: var(--muted); }
+.t-left b { font-size: 13px; color: var(--ink); }
+.t-row.now .t-left b { color: #b45309; }
+.t-row.done .t-left { color: #17804a; }
+
+/* кнопки в правом верхнем углу (только телефон) */
+.float-actions { display: none; }
+
 /* --- Компьютер --- */
 @media (min-width: 821px) {
 .days-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
 .sched-wrap { overflow: hidden; }
 .sched-grid { grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(2, 1fr); }
 .sched-card { min-height: 0; }
+/* ПК: два окна делят область ровно пополам и по ширине, и по высоте */
+.time-grid { padding-right: 0; grid-template-rows: 1fr; }
+.time-card { aspect-ratio: auto; max-height: none; }
+.t-row { flex: 1 1 0; min-height: 0; }
+/* правый столбец чуть уже — там на фоне стоит большая цифра урока */
+.time-card:last-child .time-rows { padding-right: 22%; }
+.time-digit { opacity: .13; }
 }
 @media (min-width: 821px) and (min-height: 600px) {
 .list--main .row { min-height: 34px; }
@@ -181,12 +225,18 @@ to { opacity: 1; transform: scale(1); }
 /* экран целиком, без внешней прокрутки; снизу оставляем ровно высоту меню */
 .screen { padding: 10px 10px calc(var(--nav-h, 62px) + 10px + env(safe-area-inset-bottom)); gap: 8px; overflow: hidden; }
 
-/* кнопка сворачивания меню в правом верхнем углу */
-.nav-toggle { display: grid; position: fixed; top: 8px; right: 8px; z-index: 45; background: rgba(255, 255, 255, .92); backdrop-filter: blur(6px); }
-.nav-toggle svg { width: 16px; height: 16px; }
+/* кнопки в правом верхнем углу: «Время» и сворачивание меню */
+.float-actions { display: flex; position: fixed; top: 8px; right: 8px; z-index: 45; gap: 6px; }
+.nav-toggle,
+.time-btn { display: grid; background: rgba(255, 255, 255, .92); backdrop-filter: blur(6px); }
+.nav-toggle svg,
+.time-btn svg { width: 16px; height: 16px; }
+.time-btn { display: none; }
+body.on-schedule .time-btn { display: grid; }
 
 /* компактная шапка: заголовок + одна строка инструментов */
 .topbar { gap: 6px; padding-right: 38px; }
+body.on-schedule .topbar { padding-right: 72px; }
 .topbar-head { flex-wrap: nowrap; gap: 8px; }
 .topbar h1 { font-size: 17px; }
 .date-label { font-size: 10.5px; }
@@ -243,6 +293,26 @@ to { opacity: 1; transform: scale(1); }
 .sched-card .nb-lg .ss { font-size: 9px; }
 .sched-card .nb-lg .bb { font-size: 5.5px; right: 1px; bottom: 0; }
 
+/* Время: два окна друг под другом, каждое на пол-экрана */
+.time-grid { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; gap: 8px; align-items: stretch; padding-right: 0; }
+.time-card { aspect-ratio: auto; }
+.time-card header { padding: 5px 9px; gap: 5px; }
+.time-day { font-size: 12px; }
+.time-full { font-size: 8px; }
+.time-phase { font-size: 9.5px; }
+.time-rows { padding: 3px; gap: 3px; }
+.t-row { gap: 6px; padding: 0 6px; border-radius: 5px; flex: 1 1 0; min-height: 0; }
+.t-num { width: 10px; font-size: 10px; }
+.t-name { font-size: 10.5px; }
+.t-time { font-size: 9.5px; }
+.t-left { width: 52px; font-size: 8.5px; }
+.t-left b { font-size: 10px; }
+.time-card .nb-lg { width: 17px; height: 19px; min-width: 17px; border-width: 1.5px; border-radius: 3px; }
+.time-card .nb-lg .ss { font-size: 9px; }
+.time-card .nb-lg .bb { font-size: 5px; right: 1px; bottom: 0; }
+.time-digit { right: -2%; font-size: min(32vh, 46vw); z-index: 2; opacity: .1; }
+.time-card header .today-flag { position: static; }
+
 .toast { bottom: 72px; font-size: 11.5px; }
 }
 </style>
@@ -265,6 +335,9 @@ to { opacity: 1; transform: scale(1); }
       </button>
       <button class="nav-btn" data-screen="schedule">
         <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.6V12l3.1 1.9"/></svg></span>Расписание
+      </button>
+      <button class="nav-btn" data-screen="time">
+        <span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 12V8.6M12 12l-2.6 1.6"/></svg></span>Время
       </button>
     </nav>
 
@@ -319,6 +392,20 @@ to { opacity: 1; transform: scale(1); }
       <div class="sched-wrap"><div class="sched-grid" id="sched-grid"></div></div>
     </section>
 
+    <!-- ================= Время ================= -->
+    <section class="screen" id="screen-time">
+      <header class="topbar">
+        <div class="topbar-head">
+          <h1>Время</h1>
+          <span class="date-label">звонки и сколько осталось</span>
+        </div>
+      </header>
+      <div class="time-wrap">
+        <div class="time-digit" id="time-digit"></div>
+        <div class="time-grid" id="time-grid"></div>
+      </div>
+    </section>
+
     <!-- ================= Один день ================= -->
     <section class="screen" id="screen-day">
       <header class="topbar">
@@ -348,13 +435,18 @@ to { opacity: 1; transform: scale(1); }
   </button>
 </nav>
 
-<!-- Телефон: кнопка сворачивает/разворачивает нижнее меню -->
-<button class="ghost-btn nav-toggle" id="nav-toggle" title="Свернуть меню" aria-expanded="true">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-    <path class="chev-down" d="M7 10l5 5 5-5"/>
-    <path class="chev-up" d="M7 14l5-5 5 5"/>
-  </svg>
-</button>
+<!-- Телефон: «Время» и сворачивание нижнего меню -->
+<div class="float-actions">
+  <button class="ghost-btn time-btn" id="time-btn" title="Время звонков">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 12V8.6M12 12l-2.6 1.6"/></svg>
+  </button>
+  <button class="ghost-btn nav-toggle" id="nav-toggle" title="Свернуть меню" aria-expanded="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path class="chev-down" d="M7 10l5 5 5-5"/>
+      <path class="chev-up" d="M7 14l5-5 5 5"/>
+    </svg>
+  </button>
+</div>
 
 <div class="modal" id="modal">
   <div class="modal-card">
@@ -435,6 +527,12 @@ const WEEK_FULL = {
   'ЧТ': 'Четверг', 'ПТ': 'Пятница', 'СБ': 'Суббота'
 };
 
+/* В старых сохранениях день мог быть любым (например, «ВС»),
+   поэтому полное название берём только у известных дней. */
+function dayName(day) {
+  return WEEK_FULL[day] || '';
+}
+
 /* В какие дни задают предмет */
 const SUBJECTS_BY_DAY = {
   'ПН': ['Физика', 'Обществознание', 'Программирование', 'Алгебра'],
@@ -455,6 +553,13 @@ const LESSONS = {
   'СБ': [['Физика (с.к)', '212'], ['Физика (с.к)', '212'], ['МХК', '108'], ['Химия', '312'], ['Геометрия', '204'], ['Вероятность', '204'], ['Английский язык', '206']]
 };
 
+/* Расписание звонков: [начало, конец] каждого урока.
+   В субботу часть уроков начинается в другое время. */
+const BELLS = {
+  week: [['08:00', '08:40'], ['08:50', '09:30'], ['09:40', '10:20'], ['10:40', '11:20'], ['11:40', '12:20'], ['12:30', '13:10'], ['13:15', '13:55']],
+  sat: [['08:00', '08:40'], ['08:50', '09:30'], ['09:45', '10:25'], ['10:40', '11:20'], ['11:35', '12:15'], ['12:25', '13:05'], ['13:10', '13:50']]
+};
+
 const DIARY_URL = 'https://one.43edu.ru/auth/login';
 const STORAGE_KEY = 'test_site_hw';
 const LEGACY_KEY = 'hw';
@@ -469,11 +574,13 @@ let toastTimer = null;
 /* ---------- Элементы ---------- */
 const ui = {
   screens: document.querySelectorAll('.screen'),
-  screenButtons: document.querySelectorAll('[data-screen]'),
+  screenButtons: document.querySelectorAll('button[data-screen]'),
   listMain: document.getElementById('list-main'),
   listDay: document.getElementById('list-day'),
   daysGrid: document.getElementById('days-grid'),
   schedGrid: document.getElementById('sched-grid'),
+  timeGrid: document.getElementById('time-grid'),
+  timeDigit: document.getElementById('time-digit'),
   todayLabel: document.getElementById('today-label'),
   statToday: document.getElementById('stat-today'),
   statTotal: document.getElementById('stat-total'),
@@ -575,6 +682,39 @@ function persist() {
   }
 }
 
+/* Дз живёт до конца своего дня сдачи, но не дольше недели с момента ввода. */
+const HW_TTL = 7 * 24 * 60 * 60 * 1000;
+
+function homeworkExpiry(entry) {
+  const savedAt = entry.savedAt || Date.now();
+  const index = WEEK_DAYS.indexOf(entry.day);
+  const weekLimit = savedAt + HW_TTL;
+
+  if (index < 0) return weekLimit;
+
+  const saved = new Date(savedAt);
+  const offset = (index - ((saved.getDay() + 6) % 7) + 7) % 7;
+  const dueEnd = new Date(saved.getFullYear(), saved.getMonth(), saved.getDate() + offset + 1).getTime();
+
+  return Math.min(dueEnd, weekLimit);
+}
+
+/* Убираем просроченные дз; возвращает true, если что-то изменилось */
+function expireHomework() {
+  const now = Date.now();
+  let changed = false;
+
+  Object.keys(homework).forEach((subject) => {
+    if (homeworkExpiry(homework[subject]) <= now) {
+      delete homework[subject];
+      changed = true;
+    }
+  });
+
+  if (changed) persist();
+  return changed;
+}
+
 function loadHomework() {
   let stored = readJson(STORAGE_KEY);
 
@@ -592,7 +732,7 @@ function loadHomework() {
 
     if (typeof value === 'string') {
       if (value.trim()) {
-        homework[subject] = { text: value, day: nearestStudyDay(subject) };
+        homework[subject] = { text: value, day: nearestStudyDay(subject), savedAt: Date.now() };
         needsSave = true;
       }
       return;
@@ -600,15 +740,19 @@ function loadHomework() {
 
     const text = value && (value.text || value.t);
     if (typeof text === 'string' && text.trim()) {
+      const savedDay = value.day || value.d;
+
       homework[subject] = {
         text: text,
-        day: value.day || value.d || nearestStudyDay(subject)
+        day: WEEK_DAYS.includes(savedDay) ? savedDay : nearestStudyDay(subject),
+        savedAt: value.savedAt || Date.now()
       };
       needsSave = true;
     }
   });
 
   if (needsSave) persist();
+  expireHomework();
 }
 
 function saveHomework(subject, rawValue) {
@@ -621,8 +765,9 @@ function saveHomework(subject, rawValue) {
 
     if (previous && previous.text === text) {
       if (!previous.day) previous.day = nearestStudyDay(subject);
+      previous.savedAt = Date.now();
     } else {
-      homework[subject] = { text: text, day: nearestStudyDay(subject) };
+      homework[subject] = { text: text, day: nearestStudyDay(subject), savedAt: Date.now() };
     }
   }
 
@@ -683,7 +828,7 @@ function phoneRow(subject, showDay) {
   const isToday = day && day === currentWeekDay();
 
   const pill = showDay && day
-    ? `<span class="pill${isToday ? ' today' : ''}" title="Дз на ${WEEK_FULL[day].toLowerCase()}">${day}</span>`
+    ? `<span class="pill${isToday ? ' today' : ''}" title="Дз на ${dayName(day).toLowerCase()}">${day}</span>`
     : '';
 
   return `<div class="row row--phone" data-subject="${escapeHtml(subject)}">
@@ -703,7 +848,7 @@ function subjectRow(subject, showDay) {
   const isToday = day && day === currentWeekDay();
 
   const pill = showDay && day
-    ? `<span class="pill${isToday ? ' today' : ''}" title="Дз на ${WEEK_FULL[day].toLowerCase()}">${day}</span>`
+    ? `<span class="pill${isToday ? ' today' : ''}" title="Дз на ${dayName(day).toLowerCase()}">${day}</span>`
     : '';
 
   const titleAttr = text ? ` title="${escapeHtml(text)}"` : '';
@@ -794,9 +939,94 @@ function renderSchedule() {
   }).join('');
 }
 
+/* ============================================================
+   Время: звонки
+   ============================================================ */
+function toMinutes(text) {
+  const [hours, minutes] = text.split(':').map(Number);
+  return hours * 60 + minutes;
+}
+
+/* Что сейчас: номер урока, урок это или перемена, сколько минут до звонка */
+function bellState(bells, now) {
+  const spans = bells.map(([start, end]) => [toMinutes(start), toMinutes(end)]);
+
+  for (let i = 0; i < spans.length; i++) {
+    if (now >= spans[i][0] && now < spans[i][1]) return { index: i, phase: 'lesson', left: spans[i][1] - now };
+  }
+
+  for (let i = 0; i < spans.length; i++) {
+    if (now < spans[i][0]) return { index: i, phase: 'break', left: spans[i][0] - now };
+  }
+
+  return { index: -1, phase: 'off', left: 0 };
+}
+
+function phaseText(state) {
+  if (state.phase === 'lesson') return `урок ${state.index + 1} · до звонка ${state.left} мин`;
+  if (state.phase === 'break') return `перемена · до урока ${state.left} мин`;
+  return 'уроки закончились';
+}
+
+function timeCard(day, bells, isToday, now) {
+  const state = isToday ? bellState(bells, now) : null;
+
+  const rows = LESSONS[day].map(([subject], index) => {
+    let mark = '';
+    if (state) {
+      if (index < state.index || state.phase === 'off') mark = 'done';
+      else if (index === state.index) mark = 'now';
+    }
+
+    const left = state && index === state.index && state.phase !== 'off'
+      ? `<b>${state.left}</b> мин`
+      : '';
+
+    return `<div class="t-row ${mark}">
+      <span class="t-num">${index + 1}</span>
+      ${notebook(subject, true)}
+      <span class="t-name">${subject}</span>
+      <span class="t-time">${bells[index].join('–')}</span>
+      <span class="t-left">${left}</span>
+    </div>`;
+  }).join('');
+
+  const phase = state ? `<span class="time-phase ${state.phase === 'off' ? 'done' : 'now'}">${phaseText(state)}</span>` : '';
+
+  return `<article class="time-card${isToday ? ' today' : ''}">
+    <header>
+      <span class="time-day">${day}</span>
+      <span class="time-full">${WEEK_FULL[day]}</span>
+      ${phase}
+      ${isToday ? '<span class="today-flag">сегодня</span>' : ''}
+    </header>
+    <div class="time-rows">${rows}</div>
+  </article>`;
+}
+
+/* Перерисовываем только при смене минуты, чтобы не дёргать разметку каждую секунду */
+let timeRenderedMinute = -1;
+
+function renderTime(force) {
+  const now = new Date();
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  if (!force && minutes === timeRenderedMinute) return;
+  timeRenderedMinute = minutes;
+
+  const today = currentWeekDay();
+  const weekday = today && today !== 'СБ' ? today : 'ПН';
+
+  ui.timeGrid.innerHTML =
+    timeCard(weekday, BELLS.week, today === weekday, minutes) +
+    timeCard('СБ', BELLS.sat, today === 'СБ', minutes);
+
+  const bells = today === 'СБ' ? BELLS.sat : today ? BELLS.week : null;
+  const state = bells ? bellState(bells, minutes) : null;
+  ui.timeDigit.textContent = state && state.index >= 0 ? state.index + 1 : '';
+}
+
 function renderDay() {
   if (!currentDay) return;
-
   const list = (SUBJECTS_BY_DAY[currentDay] || []).filter((subject) => homeworkDay(subject) === currentDay);
   const date = formatDate(dateForWeekday(WEEK_DAYS.indexOf(currentDay)));
 
@@ -822,12 +1052,17 @@ function refreshScreen() {
 function showScreen(name) {
   activeScreenId = `screen-${name}`;
 
+  /* класс, а не data-атрибут: иначе closest('[data-screen]') находил бы body
+     и любая кнопка на странице считалась бы кнопкой меню */
+  document.body.classList.toggle('on-schedule', name === 'schedule');
+
   ui.screens.forEach((screen) => screen.classList.toggle('active', screen.id === activeScreenId));
   ui.screenButtons.forEach((button) => button.classList.toggle('active', button.dataset.screen === name));
 
   if (name === 'main') renderMain();
   if (name === 'days') renderDays();
   if (name === 'schedule') renderSchedule();
+  if (name === 'time') renderTime(true);
   if (name === 'day') renderDay();
 }
 
@@ -961,7 +1196,7 @@ function askOpenDiary() {
    События
    ============================================================ */
 function onClick(event) {
-  const navButton = event.target.closest('[data-screen]');
+  const navButton = event.target.closest('button[data-screen]');
   if (navButton) {
     showScreen(navButton.dataset.screen);
     return;
@@ -1001,6 +1236,11 @@ function onClick(event) {
     return;
   }
 
+  if (event.target.closest('#time-btn')) {
+    showScreen('time');
+    return;
+  }
+
   if (event.target.closest('#back-btn')) {
     showScreen('days');
   }
@@ -1020,13 +1260,16 @@ function onKeydown(event) {
 function init() {
   loadHomework();
 
+  /* обработчики подключаем до отрисовки: если данные окажутся битыми,
+     кнопки всё равно продолжат работать */
+  document.addEventListener('click', onClick);
+  document.addEventListener('keydown', onKeydown);
+
   ui.todayLabel.textContent = formatToday();
   renderMain();
   renderDays();
   renderSchedule();
 
-  document.addEventListener('click', onClick);
-  document.addEventListener('keydown', onKeydown);
   ui.search.addEventListener('input', renderMain);
 
   /* при повороте телефона или смене ширины перерисовываем строки */
@@ -1042,6 +1285,17 @@ function init() {
 
   /* высота нижнего меню -> отступ экрана, чтобы список не прятался под ним */
   syncNavSpace();
+
+  /* на экране «Время» отсчёт до звонка обновляется сам */
+  setInterval(() => {
+    if (activeScreenId === 'screen-time') renderTime();
+  }, 1000);
+
+  /* если вкладка открыта сутками, просроченные дз убираем без перезагрузки */
+  setInterval(() => {
+    if (document.activeElement.closest('input, textarea')) return; /* не мешаем вводу */
+    if (expireHomework()) refreshScreen();
+  }, 60 * 1000);
   syncViewport();
   window.addEventListener('resize', () => {
     syncViewport();
