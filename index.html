@@ -674,17 +674,6 @@ function readJson(key) {
   }
 }
 
-function persist() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(homework));
-  } catch (error) {
-    /* при отключённом localStorage данные живут до перезагрузки */
-  }
-}
-
-/* Дз живёт до конца своего дня сдачи, но не дольше недели с момента ввода. */
-const HW_TTL = 7 * 24 * 60 * 60 * 1000;
-
 function homeworkExpiry(entry) {
   const savedAt = entry.savedAt || Date.now();
   const index = WEEK_DAYS.indexOf(entry.day);
