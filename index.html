@@ -682,10 +682,9 @@ function persist() {
   }
 }
 
-/* Дз живёт до конца своего дня сдачи, но не дольше недели с момента ввода. */
+/* Дз живёт до конца ближайшего дня сдачи, но не дольше недели с момента ввода. */
 const HW_TTL = 7 * 24 * 60 * 60 * 1000;
-   
-   
+
 function homeworkExpiry(entry) {
   const savedAt = entry.savedAt || Date.now();
   const index = WEEK_DAYS.indexOf(entry.day);
@@ -694,7 +693,9 @@ function homeworkExpiry(entry) {
   if (index < 0) return weekLimit;
 
   const saved = new Date(savedAt);
-  const offset = (index - ((saved.getDay() + 6) % 7) + 7) % 7;
+  /* Считаем именно следующий день сдачи: если дз вводят после урока в этот же
+     день, оно относится к следующей неделе, а не к уже прошедшему уроку. */
+  const offset = (index - ((saved.getDay() + 6) % 7) + 7) % 7 || 7;
   const dueEnd = new Date(saved.getFullYear(), saved.getMonth(), saved.getDate() + offset + 1).getTime();
 
   return Math.min(dueEnd, weekLimit);
